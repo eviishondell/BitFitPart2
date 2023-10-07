@@ -1,52 +1,44 @@
-// File: MainActivity.kt
-
 package com.example.bitfitpart1
+
 import android.content.Intent
-import androidx.recyclerview.widget.RecyclerView
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
-
-    private lateinit var exerciseRecordsRecyclerView: RecyclerView
-    private val exerciseRecords = mutableListOf<ExerciseRecord>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        exerciseRecordsRecyclerView = findViewById(R.id.recycler_view)
-        val recordsAdapter = ExerciseRecordAdapter(exerciseRecords)
+        val fragmentManager: FragmentManager = supportFragmentManager
 
-        lifecycleScope.launch {
-            (application as ExerciseApplication).database.exerciseDao().getAllExerciseRecords()
-                .collect { databaseList ->
-                    databaseList.map { entity ->
-                        ExerciseRecord(
-                            entity.exerciseName,
-                            entity.exerciseDuration
-                        )
-                    }.also { mappedList ->
-                        exerciseRecords.clear()
-                        exerciseRecords.addAll(mappedList)
-                        recordsAdapter.notifyDataSetChanged()
-                    }
-                }
+        // define fragments
+        val listFragment: Fragment = ListFragment()
+        val addFragment: Fragment = AddFragment()
+
+        val bottomNavigationView: BottomNavigationView = findViewById(R.id.bottom_navigation)
+
+        // handle navigation selection
+        bottomNavigationView.setOnItemSelectedListener { item ->
+            lateinit var fragment: Fragment
+            when (item.itemId) {
+                R.id.listTab -> fragment = listFragment
+                R.id.addTab -> fragment = addFragment
+            }
+            fragmentManager.beginTransaction().replace(R.id.content, fragment).commit()
+            true
         }
 
-        exerciseRecordsRecyclerView.adapter = recordsAdapter
-        exerciseRecordsRecyclerView.layoutManager = LinearLayoutManager(this)
+        // Set default selection
+        bottomNavigationView.selectedItemId = R.id.listTab
 
-        val addSessionBtn = findViewById<Button>(R.id.button)
-
-        addSessionBtn.setOnClickListener {
-            // launch the detail activity
-            val intent = Intent(this, RecordActivity::class.java)
-            this.startActivity(intent)
-        }
     }
 }
